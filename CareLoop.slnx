@@ -1,2 +1,15 @@
 <Solution>
+  <Folder Name="/src/">
+    <Project Path="src/CareLoop.Api/CareLoop.Api.csproj" />
+    <Project Path="src/CareLoop.Application/CareLoop.Application.csproj" />
+    <Project Path="src/CareLoop.Domain/CareLoop.Domain.csproj" />
+    <Project Path="src/CareLoop.Infrastructure/CareLoop.Infrastructure.csproj" />
+    <Project Path="src/CareLoop.ServiceDefaults/CareLoop.ServiceDefaults.csproj" />
+    <Project Path="src/CareLoop.Web/CareLoop.Web.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/CareLoop.Application.Tests/CareLoop.Application.Tests.csproj" />
+    <Project Path="tests/CareLoop.Domain.Tests/CareLoop.Domain.Tests.csproj" />
+    <Project Path="tests/CareLoop.IntegrationTests/CareLoop.IntegrationTests.csproj" />
+  </Folder>
 </Solution>

@@ -10,4 +10,10 @@
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.11" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\CareLoop.Application\CareLoop.Application.csproj" />
+    <ProjectReference Include="..\CareLoop.Infrastructure\CareLoop.Infrastructure.csproj" />
+    <ProjectReference Include="..\CareLoop.ServiceDefaults\CareLoop.ServiceDefaults.csproj" />
+  </ItemGroup>
+
 </Project>

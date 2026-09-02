@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("CareLoop.Api")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+cd9cd8eb9d8b23194aafa19646630df4d2437752")]
 [assembly: System.Reflection.AssemblyProductAttribute("CareLoop.Api")]
 [assembly: System.Reflection.AssemblyTitleAttribute("CareLoop.Api")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

@@ -1,0 +1,17 @@
+<Project Sdk="Aspire.AppHost.Sdk/13.5.3">
+
+  <ItemGroup>
+    <ProjectReference Include="..\CareLoop.Api\CareLoop.Api.csproj" />
+    <ProjectReference Include="..\CareLoop.Web\CareLoop.Web.csproj" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AspireUseCliBundle>true</AspireUseCliBundle>
+    <UserSecretsId>a47df4e7-ca83-48c6-9c44-3ff48e4f8f28</UserSecretsId>
+  </PropertyGroup>
+
+</Project>

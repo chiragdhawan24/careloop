@@ -18,4 +18,8 @@
     <Using Include="Xunit" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\CareLoop.Domain\CareLoop.Domain.csproj" />
+  </ItemGroup>
+
 </Project>

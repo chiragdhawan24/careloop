@@ -1,11 +1,48 @@
 {
   "version": 4,
   "targets": {
-    "net10.0": {}
+    "net10.0": {
+      "CareLoop.Application/1.0.0": {
+        "type": "project",
+        "framework": ".NETCoreApp,Version=v10.0",
+        "dependencies": {
+          "CareLoop.Domain": "1.0.0"
+        },
+        "compile": {
+          "bin/placeholder/CareLoop.Application.dll": {}
+        },
+        "runtime": {
+          "bin/placeholder/CareLoop.Application.dll": {}
+        }
+      },
+      "CareLoop.Domain/1.0.0": {
+        "type": "project",
+        "framework": ".NETCoreApp,Version=v10.0",
+        "compile": {
+          "bin/placeholder/CareLoop.Domain.dll": {}
+        },
+        "runtime": {
+          "bin/placeholder/CareLoop.Domain.dll": {}
+        }
+      }
+    }
   },
-  "libraries": {},
+  "libraries": {
+    "CareLoop.Application/1.0.0": {
+      "type": "project",
+      "path": "../CareLoop.Application/CareLoop.Application.csproj",
+      "msbuildProject": "../CareLoop.Application/CareLoop.Application.csproj"
+    },
+    "CareLoop.Domain/1.0.0": {
+      "type": "project",
+      "path": "../CareLoop.Domain/CareLoop.Domain.csproj",
+      "msbuildProject": "../CareLoop.Domain/CareLoop.Domain.csproj"
+    }
+  },
   "projectFileDependencyGroups": {
-    "net10.0": []
+    "net10.0": [
+      "CareLoop.Application >= 1.0.0"
+    ]
   },
   "packageFolders": {
     "/Users/chirag/.nuget/packages/": {}
@@ -32,7 +69,11 @@
         "net10.0": {
           "framework": "net10.0",
           "targetAlias": "net10.0",
-          "projectReferences": {}
+          "projectReferences": {
+            "/Users/chirag/Documents/careloop/src/CareLoop.Application/CareLoop.Application.csproj": {
+              "projectPath": "/Users/chirag/Documents/careloop/src/CareLoop.Application/CareLoop.Application.csproj"
+            }
+          }
         }
       },
       "warningProperties": {
