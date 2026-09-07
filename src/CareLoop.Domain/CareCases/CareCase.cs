@@ -16,9 +16,9 @@ public class CareCase
 
     public Guid Id { get; private set; }
 
-    public Patient Patient { get; private set; }
+    public Patient Patient { get; private set; } = null!;
 
-    public DiagnosticOrder DiagnosticOrder { get; private set; }
+    public DiagnosticOrder DiagnosticOrder { get; private set; } = null!;
 
     public DiagnosticResult? DiagnosticResult { get; private set; }
 
@@ -40,6 +40,11 @@ public class CareCase
     public IReadOnlyCollection<CareCaseEvent> Events =>
         _events.AsReadOnly();
 
+    private CareCase()
+    {
+        // This constructor will be used by the EF Core when materializing 
+        // from the PostgreSQL Database
+    }
     public CareCase(
         Guid id,
         Patient patient,
