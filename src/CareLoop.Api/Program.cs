@@ -13,6 +13,23 @@ builder.Services.AddOpenApi();
 
 var app = builder.Build();
 
+if (app.Environment.IsDevelopment())
+{
+    await using var scope = app.Services.CreateAsyncScope();
+
+    var dbContext =
+        scope.ServiceProvider.GetRequiredService<CareLoopDbContext>();
+
+    await dbContext.Database.MigrateAsync();
+
+    var seeded = await CareLoopDbSeeder.SeedAsync(dbContext);
+
+    app.Logger.LogInformation(
+        seeded
+            ? "Synthetic CareLoop development data seeded."
+            : "Synthetic CareLoop development data already exists.");
+}
+
 app.MapDefaultEndpoints();
 
 // Configure the HTTP request pipeline.

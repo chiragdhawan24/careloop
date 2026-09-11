@@ -12,7 +12,8 @@ public sealed class CareLoopDbContextFactory
             new DbContextOptionsBuilder<CareLoopDbContext>();
 
         optionsBuilder.UseNpgsql(
-            "Host=localhost;Database=careloop_design;Username=postgres");
+            "Host=localhost;Database=careloop_design;Username=postgres")
+            .UseSnakeCaseNamingConvention();
 
         return new CareLoopDbContext(optionsBuilder.Options);
     }

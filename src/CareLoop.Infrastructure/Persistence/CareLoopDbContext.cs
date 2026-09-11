@@ -38,11 +38,12 @@ public sealed class CareLoopDbContext(
     public DbSet<CareCaseEvent> CareCaseEvents =>
         Set<CareCaseEvent>();
 
-    protected override void OnConfiguring(
-        DbContextOptionsBuilder optionsBuilder)
-    {
-        optionsBuilder.UseSnakeCaseNamingConvention();
-    }
+    // REMOVED because CareLoop.Api gave error 134
+    // protected override void OnConfiguring(
+    //     DbContextOptionsBuilder optionsBuilder)
+    // {
+    //     optionsBuilder.UseSnakeCaseNamingConvention();
+    // }
 
     protected override void OnModelCreating(
         ModelBuilder modelBuilder)
