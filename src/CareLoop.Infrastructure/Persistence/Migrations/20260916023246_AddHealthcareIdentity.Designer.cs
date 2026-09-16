@@ -3,6 +3,7 @@ using System;
 using CareLoop.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace CareLoop.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(CareLoopDbContext))]
-    partial class CareLoopDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260916023246_AddHealthcareIdentity")]
+    partial class AddHealthcareIdentity
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

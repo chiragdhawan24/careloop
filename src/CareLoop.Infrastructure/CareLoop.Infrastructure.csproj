@@ -7,6 +7,7 @@
   <ItemGroup>
     <PackageReference Include="Aspire.Npgsql.EntityFrameworkCore.PostgreSQL" Version="13.5.3" />
     <PackageReference Include="EFCore.NamingConventions" Version="10.0.1" />
+    <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="10.0.11" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.11" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.11">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
@@ -20,5 +21,10 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
   </PropertyGroup>
+
+  <!-- IMPORTANT NOTE: Unlike CareLoop.Api, it does not automatically reference Microsoft.AspNetCore.App. Microsoft documents exactly this distinction: Microsoft.NET.Sdk.Web projects get ASP.NET Core implicitly, while normal Microsoft.NET.Sdk class libraries must add a FrameworkReference when they use ASP.NET Core APIs. -->
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
 
 </Project>

@@ -2,6 +2,9 @@ using CareLoop.Infrastructure;
 using CareLoop.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
+using CareLoop.Infrastructure.Identity;
+using Microsoft.AspNetCore.Identity;
+
 var builder = WebApplication.CreateBuilder(args);
 
 builder.AddServiceDefaults();
@@ -40,6 +43,9 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
+app.UseAuthentication();
+app.UseAuthorization();
+
 var summaries = new[]
 {
     "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
@@ -58,6 +64,8 @@ app.MapGet("/weatherforecast", () =>
     return forecast;
 })
 .WithName("GetWeatherForecast");
+
+app.MapGroup("/auth").MapIdentityApi<ApplicationUser>();
 
 app.Run();
 
