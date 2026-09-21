@@ -5,6 +5,10 @@ using Microsoft.EntityFrameworkCore;
 using CareLoop.Infrastructure.Identity;
 using Microsoft.AspNetCore.Identity;
 
+using CareLoop.Api.Contracts;
+using CareLoop.Api.Endpoints;
+using CareLoop.Application.Security;
+
 var builder = WebApplication.CreateBuilder(args);
 
 builder.AddServiceDefaults();
@@ -31,6 +35,8 @@ if (app.Environment.IsDevelopment())
         seeded
             ? "Synthetic CareLoop development data seeded."
             : "Synthetic CareLoop development data already exists.");
+
+    await HealthcareIdentitySeeder.SeedAsync(scope.ServiceProvider);
 }
 
 app.MapDefaultEndpoints();
@@ -66,6 +72,8 @@ app.MapGet("/weatherforecast", () =>
 .WithName("GetWeatherForecast");
 
 app.MapGroup("/auth").MapIdentityApi<ApplicationUser>();
+
+app.MapCareCaseEndpoints();
 
 app.Run();
 

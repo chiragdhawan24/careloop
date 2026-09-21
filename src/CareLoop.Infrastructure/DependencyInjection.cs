@@ -60,7 +60,10 @@ public static class DependencyInjection
                 AuthorizationPolicies.CanViewAuditTrail,
                 policy => policy.RequireRole(
                     HealthcareRoles.Supervisor,
-                    HealthcareRoles.Administrator));
+                    HealthcareRoles.Administrator))
+            .AddPolicy(AuthorizationPolicies.CanCreateDiagnosticOrders,
+                policy => policy.RequireRole(
+                    HealthcareRoles.Physician));
                 return builder;
     }
 }
