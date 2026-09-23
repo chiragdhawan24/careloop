@@ -28,6 +28,10 @@ public static class CareCaseEndpoints
             .RequireAuthorization(
                 AuthorizationPolicies.CanCreateDiagnosticOrders);
 
+        group.MapPost("/{id:guid}/result", RecordDiagnosticResult)
+            .RequireAuthorization(
+                AuthorizationPolicies.CanRecordDiagnosticResults);
+
         return endpoints;
     }
 
@@ -82,6 +86,74 @@ public static class CareCaseEndpoints
             : Results.Ok(careCase);
     }
 
+    private static async Task<IResult> RecordDiagnosticResult(
+        Guid id,
+        RecordDiagnosticResultRequest request,
+        CareLoopDbContext dbContext,
+        CancellationToken cancellationToken)
+    {
+        if (!Enum.IsDefined(request.Priority))
+        {
+            return Results.BadRequest(
+                "Invalid diagnostic result priority.");
+        }
+
+        if (string.IsNullOrWhiteSpace(request.Summary))
+        {
+            return Results.BadRequest(
+                "Result summary is required.");
+        }
+
+        if (request.Summary.Length > 2000)
+        {
+            return Results.BadRequest(
+                "Result summary cannot exceed 2000 characters.");
+        }
+
+        var careCase = await dbContext.CareCases
+            .Include(x => x.DiagnosticOrder)
+            .SingleOrDefaultAsync(
+                x => x.Id == id,
+                cancellationToken);
+
+        if (careCase is null)
+        {
+            return Results.NotFound();
+        }
+
+        
+        Console.WriteLine($"HELLO dbContext: {dbContext}");
+        Console.WriteLine($"HELLO careCase: {careCase}");
+
+        var result = new DiagnosticResult(
+            Guid.NewGuid(),
+            careCase.DiagnosticOrder.Id,
+            request.Priority,
+            request.Summary.Trim(),
+            DateTimeOffset.UtcNow);
+
+        try
+        {
+            careCase.ReceiveResult(result);
+        }
+        catch (InvalidOperationException exception)
+        {
+            return Results.Conflict(exception.Message);
+        }
+        
+        Console.WriteLine($"Diagnostic result recorded for CareCase {careCase.Id}");
+
+        await dbContext.SaveChangesAsync(cancellationToken);
+
+        return Results.Ok(
+            new DiagnosticResultResponse(
+                result.Id,
+                result.DiagnosticOrderId,
+                result.Priority,
+                result.Summary,
+                result.ReceivedAt,
+                careCase.Status));
+    }
     private static async Task<IResult> CreateCareCase(
         CreateCareCaseRequest request,
         ClaimsPrincipal user,

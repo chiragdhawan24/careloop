@@ -8,4 +8,5 @@ public static class AuthorizationPolicies
     public const string CanEscalateCases = "CanEscalateCases";
     public const string CanViewAuditTrail = "CanViewAuditTrail";
     public const string CanCreateDiagnosticOrders = "CanCreateDiagnosticOrders";
+    public const string CanRecordDiagnosticResults = "CanRecordDiagnosticResults";
 }

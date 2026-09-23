@@ -63,7 +63,11 @@ public static class DependencyInjection
                     HealthcareRoles.Administrator))
             .AddPolicy(AuthorizationPolicies.CanCreateDiagnosticOrders,
                 policy => policy.RequireRole(
-                    HealthcareRoles.Physician));
-                return builder;
+                    HealthcareRoles.Physician))
+            .AddPolicy(AuthorizationPolicies.CanRecordDiagnosticResults,
+                policy => policy.RequireRole(
+                    HealthcareRoles.Physician,
+                    HealthcareRoles.LabStaff));
+            return builder;
     }
 }
