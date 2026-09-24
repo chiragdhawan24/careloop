@@ -4,8 +4,10 @@ using CareLoop.Application.Security;
 using CareLoop.Domain.CareCases;
 using CareLoop.Domain.Diagnostics;
 using CareLoop.Domain.Patients;
+using CareLoop.Domain.Reviews;
 using CareLoop.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
+
 
 namespace CareLoop.Api.Endpoints;
 
@@ -31,6 +33,10 @@ public static class CareCaseEndpoints
         group.MapPost("/{id:guid}/result", RecordDiagnosticResult)
             .RequireAuthorization(
                 AuthorizationPolicies.CanRecordDiagnosticResults);
+        
+        group.MapPost("/{id:guid}/review", ReviewDiagnosticResult)
+            .RequireAuthorization(
+                AuthorizationPolicies.CanReviewResults);
 
         return endpoints;
     }
@@ -219,5 +225,68 @@ public static class CareCaseEndpoints
                 careCase.Status,
                 DiagnosticOrderId = order.Id
             });
+    }
+
+    private static async Task<IResult> ReviewDiagnosticResult(
+        Guid id,
+        ReviewDiagnosticResultRequest request,
+        ClaimsPrincipal user,
+        CareLoopDbContext dbContext,
+        CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(request.Notes))
+        {
+            return Results.BadRequest(
+                "Review notes are required.");
+        }
+
+        if (request.Notes.Length > 4000)
+        {
+            return Results.BadRequest(
+                "Review notes cannot exceed 4000 characters.");
+        }
+
+        var userId =
+            user.FindFirstValue(ClaimTypes.NameIdentifier);
+
+        if (!Guid.TryParse(userId, out var reviewedBy))
+        {
+            return Results.Unauthorized();
+        }
+
+        var careCase = await dbContext.CareCases
+            .SingleOrDefaultAsync(
+                x => x.Id == id,
+                cancellationToken);
+
+        if (careCase is null)
+        {
+            return Results.NotFound();
+        }
+
+        var review = new ClinicalReview(
+            Guid.NewGuid(),
+            reviewedBy,
+            DateTimeOffset.UtcNow,
+            request.Notes.Trim());
+
+        try
+        {
+            careCase.ReviewResult(review);
+        }
+        catch (InvalidOperationException exception)
+        {
+            return Results.Conflict(exception.Message);
+        }
+
+        await dbContext.SaveChangesAsync(cancellationToken);
+
+        return Results.Ok(
+            new ClinicalReviewResponse(
+                review.Id,
+                review.ReviewedBy,
+                review.ReviewedAt,
+                review.Notes,
+                careCase.Status));
     }
 }
