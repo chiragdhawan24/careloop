@@ -6,6 +6,7 @@ using CareLoop.Domain.Diagnostics;
 using CareLoop.Domain.Patients;
 using CareLoop.Domain.Reviews;
 using CareLoop.Infrastructure.Persistence;
+using CareLoop.Domain.Communications; // for ContactAttempt features to work, this is needed.
 using Microsoft.EntityFrameworkCore;
 
 
@@ -37,6 +38,14 @@ public static class CareCaseEndpoints
         group.MapPost("/{id:guid}/review", ReviewDiagnosticResult)
             .RequireAuthorization(
                 AuthorizationPolicies.CanReviewResults);
+
+        group.MapPost("/{id:guid}/contact-required", RequirePatientContact)
+            .RequireAuthorization(
+                AuthorizationPolicies.CanContactPatients);
+
+        group.MapPost("/{id:guid}/contact-attempts", RecordContactAttempt)
+            .RequireAuthorization(
+                AuthorizationPolicies.CanContactPatients);
 
         return endpoints;
     }
@@ -214,8 +223,7 @@ public static class CareCaseEndpoints
 
         dbContext.CareCases.Add(careCase);
 
-        await dbContext.SaveChangesAsync(
-            cancellationToken);
+        await dbContext.SaveChangesAsync(cancellationToken);
 
         return Results.Created(
             $"/api/care-cases/{careCase.Id}",
@@ -227,6 +235,101 @@ public static class CareCaseEndpoints
             });
     }
 
+    private static async Task<IResult> RecordContactAttempt(
+        Guid id,
+        RecordContactAttemptRequest request,
+        CareLoopDbContext dbContext,
+        CancellationToken cancellationToken)
+    {
+        if (!Enum.IsDefined(request.Method))
+        {
+            return Results.BadRequest(
+                "Invalid contact method.");
+        }
+
+        if (string.IsNullOrWhiteSpace(request.Notes))
+        {
+            return Results.BadRequest(
+                "Contact attempt notes are required.");
+        }
+
+        if (request.Notes.Length > 2000)
+        {
+            return Results.BadRequest(
+                "Contact attempt notes cannot exceed 2000 characters.");
+        }
+
+        var careCase = await dbContext.CareCases
+            .Include(x => x.ContactAttempts)
+            .SingleOrDefaultAsync(
+                x => x.Id == id,
+                cancellationToken);
+
+        if (careCase is null)
+        {
+            return Results.NotFound();
+        }
+
+        var attempt = new ContactAttempt(
+            Guid.NewGuid(),
+            request.Method,
+            DateTimeOffset.UtcNow,
+            request.Successful,
+            request.Notes.Trim());
+
+        try
+        {
+            careCase.RecordContactAttempt(attempt);
+        }
+        catch (InvalidOperationException exception)
+        {
+            return Results.Conflict(exception.Message);
+        }
+
+        await dbContext.SaveChangesAsync(cancellationToken);
+
+        return Results.Ok(
+            new ContactAttemptResponse(
+                attempt.Id,
+                attempt.Method,
+                attempt.Successful,
+                attempt.Notes,
+                attempt.AttemptedAt,
+                careCase.Status));
+    }
+    private static async Task<IResult> RequirePatientContact(
+        Guid id,
+        CareLoopDbContext dbContext,
+        CancellationToken cancellationToken)
+    {
+        var careCase = await dbContext.CareCases
+            .SingleOrDefaultAsync(
+                x => x.Id == id,
+                cancellationToken);
+
+        if (careCase is null)
+        {
+            return Results.NotFound();
+        }
+
+        try
+        {
+            careCase.RequirePatientContact(
+                DateTimeOffset.UtcNow);
+        }
+        catch (InvalidOperationException exception)
+        {
+            return Results.Conflict(exception.Message);
+        }
+
+        await dbContext.SaveChangesAsync(cancellationToken);
+
+        return Results.Ok(new
+        {
+            careCase.Id,
+            careCase.Status
+        });
+    }
     private static async Task<IResult> ReviewDiagnosticResult(
         Guid id,
         ReviewDiagnosticResultRequest request,
