@@ -8,7 +8,7 @@ using CareLoop.Domain.Reviews;
 using CareLoop.Infrastructure.Persistence;
 using CareLoop.Domain.Communications; // for ContactAttempt features to work, this is needed.
 using Microsoft.EntityFrameworkCore;
-
+using CareLoop.Domain.FollowUps;
 
 namespace CareLoop.Api.Endpoints;
 
@@ -46,6 +46,30 @@ public static class CareCaseEndpoints
         group.MapPost("/{id:guid}/contact-attempts", RecordContactAttempt)
             .RequireAuthorization(
                 AuthorizationPolicies.CanContactPatients);
+
+        group.MapPost(
+            "/{id:guid}/follow-ups",
+            CreateFollowUp)
+        .RequireAuthorization(
+            AuthorizationPolicies.CanManageFollowUp);
+
+    group.MapPost(
+            "/{id:guid}/follow-ups/{followUpId:guid}/start",
+            StartFollowUp)
+        .RequireAuthorization(
+            AuthorizationPolicies.CanManageFollowUp);
+
+    group.MapPost(
+            "/{id:guid}/follow-ups/{followUpId:guid}/complete",
+            CompleteFollowUp)
+        .RequireAuthorization(
+            AuthorizationPolicies.CanManageFollowUp);
+
+    group.MapPost(
+            "/{id:guid}/resolve",
+            ResolveCareCase)
+        .RequireAuthorization(
+            AuthorizationPolicies.CanManageFollowUp);
 
         return endpoints;
     }
@@ -391,5 +415,196 @@ public static class CareCaseEndpoints
                 review.ReviewedAt,
                 review.Notes,
                 careCase.Status));
+    }
+
+    private static async Task<IResult> CreateFollowUp(
+        Guid id,
+        CreateFollowUpRequest request,
+        ClaimsPrincipal user,
+        CareLoopDbContext dbContext,
+        CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(request.Description))
+        {
+            return Results.BadRequest(
+                "Follow-up description is required.");
+        }
+
+        if (request.Description.Length > 1000)
+        {
+            return Results.BadRequest(
+                "Follow-up description cannot exceed 1000 characters.");
+        }
+
+        if (request.DueAt <= DateTimeOffset.UtcNow)
+        {
+            return Results.BadRequest(
+                "Follow-up due date must be in the future.");
+        }
+
+        var userId =
+            user.FindFirstValue(ClaimTypes.NameIdentifier);
+
+        if (!Guid.TryParse(userId, out var assignedTo))
+        {
+            return Results.Unauthorized();
+        }
+
+        var careCase = await dbContext.CareCases
+            .SingleOrDefaultAsync(
+                x => x.Id == id,
+                cancellationToken);
+
+        if (careCase is null)
+        {
+            return Results.NotFound();
+        }
+
+        var followUp = new FollowUpAction(
+            Guid.NewGuid(),
+            request.Description.Trim(),
+            assignedTo,
+            request.DueAt);
+
+        try
+        {
+            careCase.RequireFollowUp(
+                followUp,
+                DateTimeOffset.UtcNow);
+        }
+        catch (InvalidOperationException exception)
+        {
+            return Results.Conflict(exception.Message);
+        }
+
+        await dbContext.SaveChangesAsync(cancellationToken);
+
+        return Results.Created(
+            $"/api/care-cases/{id}/follow-ups/{followUp.Id}",
+            new FollowUpActionResponse(
+                followUp.Id,
+                followUp.Description,
+                followUp.AssignedTo,
+                followUp.DueAt,
+                followUp.Status,
+                followUp.CompletedAt,
+                careCase.Status));
+    }
+
+    private static async Task<IResult> StartFollowUp(
+        Guid id,
+        Guid followUpId,
+        CareLoopDbContext dbContext,
+        CancellationToken cancellationToken)
+    {
+        var careCase = await dbContext.CareCases
+            .Include(x => x.FollowUpActions)
+            .SingleOrDefaultAsync(
+                x => x.Id == id,
+                cancellationToken);
+
+        if (careCase is null)
+        {
+            return Results.NotFound();
+        }
+
+        try
+        {
+            careCase.StartFollowUp(
+                followUpId,
+                DateTimeOffset.UtcNow);
+        }
+        catch (InvalidOperationException exception)
+        {
+            return Results.Conflict(exception.Message);
+        }
+
+        await dbContext.SaveChangesAsync(cancellationToken);
+
+        return Results.Ok(new
+        {
+            careCase.Id,
+            careCase.Status
+        });
+    }
+
+    private static async Task<IResult> CompleteFollowUp(
+        Guid id,
+        Guid followUpId,
+        CareLoopDbContext dbContext,
+        CancellationToken cancellationToken)
+    {
+        var careCase = await dbContext.CareCases
+            .Include(x => x.FollowUpActions)
+            .SingleOrDefaultAsync(
+                x => x.Id == id,
+                cancellationToken);
+
+        if (careCase is null)
+        {
+            return Results.NotFound();
+        }
+
+        try
+        {
+            careCase.CompleteFollowUp(
+                followUpId,
+                DateTimeOffset.UtcNow);
+        }
+        catch (InvalidOperationException exception)
+        {
+            return Results.Conflict(exception.Message);
+        }
+
+        await dbContext.SaveChangesAsync(cancellationToken);
+
+        var followUp =
+            careCase.FollowUpActions.Single(
+                x => x.Id == followUpId);
+
+        return Results.Ok(
+            new FollowUpActionResponse(
+                followUp.Id,
+                followUp.Description,
+                followUp.AssignedTo,
+                followUp.DueAt,
+                followUp.Status,
+                followUp.CompletedAt,
+                careCase.Status));
+    }
+
+    private static async Task<IResult> ResolveCareCase(
+        Guid id,
+        CareLoopDbContext dbContext,
+        CancellationToken cancellationToken)
+    {
+        var careCase = await dbContext.CareCases
+            .Include(x => x.FollowUpActions)
+            .SingleOrDefaultAsync(
+                x => x.Id == id,
+                cancellationToken);
+
+        if (careCase is null)
+        {
+            return Results.NotFound();
+        }
+
+        try
+        {
+            careCase.Resolve(
+                DateTimeOffset.UtcNow);
+        }
+        catch (InvalidOperationException exception)
+        {
+            return Results.Conflict(exception.Message);
+        }
+
+        await dbContext.SaveChangesAsync(cancellationToken);
+
+        return Results.Ok(new
+        {
+            careCase.Id,
+            careCase.Status
+        });
     }
 }
