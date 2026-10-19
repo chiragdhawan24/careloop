@@ -2,6 +2,7 @@ using CareLoop.Domain.CareCases;
 using CareLoop.Domain.Diagnostics;
 using CareLoop.Domain.Escalations;
 using CareLoop.Infrastructure.Persistence;
+using CareLoop.Infrastructure.Auditing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -76,6 +77,12 @@ public sealed class ReviewSlaEscalationWorker(
                     EscalationLevel.CareCoordinator,
                     "Diagnostic result review SLA exceeded.",
                     now));
+
+            AuditTrail.RecordSystemAction(
+                dbContext,
+                "ReviewSlaEscalationTriggered",
+                nameof(CareCase),
+                careCase.Id);
 
             logger.LogWarning(
                 "CareCase {CareCaseId} automatically escalated because its review SLA expired.",

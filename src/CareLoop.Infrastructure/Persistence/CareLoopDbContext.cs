@@ -12,6 +12,8 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 // using Microsoft.Extensions.Options; -- no longer needed
 
+using CareLoop.Infrastructure.Auditing;
+
 namespace CareLoop.Infrastructure.Persistence;
 
 public sealed class CareLoopDbContext(
@@ -42,6 +44,9 @@ public sealed class CareLoopDbContext(
 
     public DbSet<CareCaseEvent> CareCaseEvents =>
         Set<CareCaseEvent>();
+
+    public DbSet<AuditRecord> AuditRecords =>
+        Set<AuditRecord>();
 
     // REMOVED because CareLoop.Api gave error 134
     // protected override void OnConfiguring(
@@ -95,6 +100,29 @@ public sealed class CareLoopDbContext(
 
         modelBuilder.ApplyConfigurationsFromAssembly(
             typeof(CareLoopDbContext).Assembly);
+    }
+
+    public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+    {
+        EnsureAuditRecordsAreAppendOnly();
+
+        return base.SaveChangesAsync(cancellationToken);
+    }
+
+    private void EnsureAuditRecordsAreAppendOnly()
+    {
+        var invalidEntries =
+            ChangeTracker
+                .Entries<AuditRecord>()
+                .Where(x =>
+                    x.State == EntityState.Modified ||
+                    x.State == EntityState.Deleted);
+
+        if (invalidEntries.Any())
+        {
+            throw new InvalidOperationException(
+                "Audit records are append-only and cannot be modified or deleted.");
+        }
     }
     
 }

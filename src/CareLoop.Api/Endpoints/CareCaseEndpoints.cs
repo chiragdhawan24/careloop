@@ -10,6 +10,8 @@ using CareLoop.Domain.Communications; // for ContactAttempt features to work, th
 using Microsoft.EntityFrameworkCore;
 using CareLoop.Domain.FollowUps;
 
+using CareLoop.Infrastructure.Auditing;
+
 namespace CareLoop.Api.Endpoints;
 
 public static class CareCaseEndpoints
@@ -53,23 +55,23 @@ public static class CareCaseEndpoints
         .RequireAuthorization(
             AuthorizationPolicies.CanManageFollowUp);
 
-    group.MapPost(
-            "/{id:guid}/follow-ups/{followUpId:guid}/start",
-            StartFollowUp)
-        .RequireAuthorization(
-            AuthorizationPolicies.CanManageFollowUp);
+        group.MapPost(
+                "/{id:guid}/follow-ups/{followUpId:guid}/start",
+                StartFollowUp)
+            .RequireAuthorization(
+                AuthorizationPolicies.CanManageFollowUp);
 
-    group.MapPost(
-            "/{id:guid}/follow-ups/{followUpId:guid}/complete",
-            CompleteFollowUp)
-        .RequireAuthorization(
-            AuthorizationPolicies.CanManageFollowUp);
+        group.MapPost(
+                "/{id:guid}/follow-ups/{followUpId:guid}/complete",
+                CompleteFollowUp)
+            .RequireAuthorization(
+                AuthorizationPolicies.CanManageFollowUp);
 
-    group.MapPost(
-            "/{id:guid}/resolve",
-            ResolveCareCase)
-        .RequireAuthorization(
-            AuthorizationPolicies.CanManageFollowUp);
+        group.MapPost(
+                "/{id:guid}/resolve",
+                ResolveCareCase)
+            .RequireAuthorization(
+                AuthorizationPolicies.CanManageFollowUp);
 
         return endpoints;
     }
@@ -128,6 +130,7 @@ public static class CareCaseEndpoints
     private static async Task<IResult> RecordDiagnosticResult(
         Guid id,
         RecordDiagnosticResultRequest request,
+        ClaimsPrincipal user,
         CareLoopDbContext dbContext,
         CancellationToken cancellationToken)
     {
@@ -181,6 +184,13 @@ public static class CareCaseEndpoints
         }
         
         Console.WriteLine($"Diagnostic result recorded for CareCase {careCase.Id}");
+
+        AuditTrail.RecordUserAction(
+            dbContext,
+            user,
+            "DiagnosticResultRecorded",
+            nameof(CareCase),
+            careCase.Id);
 
         await dbContext.SaveChangesAsync(cancellationToken);
 
@@ -247,6 +257,13 @@ public static class CareCaseEndpoints
 
         dbContext.CareCases.Add(careCase);
 
+        AuditTrail.RecordUserAction(
+            dbContext,
+            user,
+            "CareCaseCreated",
+            nameof(CareCase),
+            careCase.Id);
+
         await dbContext.SaveChangesAsync(cancellationToken);
 
         return Results.Created(
@@ -262,6 +279,7 @@ public static class CareCaseEndpoints
     private static async Task<IResult> RecordContactAttempt(
         Guid id,
         RecordContactAttemptRequest request,
+        ClaimsPrincipal user,
         CareLoopDbContext dbContext,
         CancellationToken cancellationToken)
     {
@@ -310,6 +328,13 @@ public static class CareCaseEndpoints
             return Results.Conflict(exception.Message);
         }
 
+        AuditTrail.RecordUserAction(
+            dbContext,
+            user,
+            "PatientContactAttemptRecorded",
+            nameof(CareCase),
+            careCase.Id);
+
         await dbContext.SaveChangesAsync(cancellationToken);
 
         return Results.Ok(
@@ -323,6 +348,7 @@ public static class CareCaseEndpoints
     }
     private static async Task<IResult> RequirePatientContact(
         Guid id,
+        ClaimsPrincipal user,
         CareLoopDbContext dbContext,
         CancellationToken cancellationToken)
     {
@@ -345,6 +371,13 @@ public static class CareCaseEndpoints
         {
             return Results.Conflict(exception.Message);
         }
+
+        AuditTrail.RecordUserAction(
+            dbContext,
+            user,
+            "PatientContactRequired",
+            nameof(CareCase),
+            careCase.Id);
 
         await dbContext.SaveChangesAsync(cancellationToken);
 
@@ -406,6 +439,12 @@ public static class CareCaseEndpoints
             return Results.Conflict(exception.Message);
         }
 
+        AuditTrail.RecordUserAction(
+            dbContext,
+            user,
+            "DiagnosticResultReviewed",
+            nameof(CareCase),
+            careCase.Id);
         await dbContext.SaveChangesAsync(cancellationToken);
 
         return Results.Ok(
@@ -477,6 +516,13 @@ public static class CareCaseEndpoints
             return Results.Conflict(exception.Message);
         }
 
+        AuditTrail.RecordUserAction(
+            dbContext,
+            user,
+            "FollowUpCreated",
+            nameof(CareCase),
+            careCase.Id);
+
         await dbContext.SaveChangesAsync(cancellationToken);
 
         return Results.Created(
@@ -494,6 +540,7 @@ public static class CareCaseEndpoints
     private static async Task<IResult> StartFollowUp(
         Guid id,
         Guid followUpId,
+        ClaimsPrincipal user,
         CareLoopDbContext dbContext,
         CancellationToken cancellationToken)
     {
@@ -519,6 +566,13 @@ public static class CareCaseEndpoints
             return Results.Conflict(exception.Message);
         }
 
+        AuditTrail.RecordUserAction(
+            dbContext,
+            user,
+            "FollowUpStarted",
+            nameof(CareCase),
+            careCase.Id);
+
         await dbContext.SaveChangesAsync(cancellationToken);
 
         return Results.Ok(new
@@ -531,6 +585,7 @@ public static class CareCaseEndpoints
     private static async Task<IResult> CompleteFollowUp(
         Guid id,
         Guid followUpId,
+        ClaimsPrincipal user,
         CareLoopDbContext dbContext,
         CancellationToken cancellationToken)
     {
@@ -556,6 +611,12 @@ public static class CareCaseEndpoints
             return Results.Conflict(exception.Message);
         }
 
+        AuditTrail.RecordUserAction(
+            dbContext,
+            user,
+            "FollowUpCompleted",
+            nameof(CareCase),
+            careCase.Id);
         await dbContext.SaveChangesAsync(cancellationToken);
 
         var followUp =
@@ -575,6 +636,7 @@ public static class CareCaseEndpoints
 
     private static async Task<IResult> ResolveCareCase(
         Guid id,
+        ClaimsPrincipal user,
         CareLoopDbContext dbContext,
         CancellationToken cancellationToken)
     {
@@ -598,6 +660,12 @@ public static class CareCaseEndpoints
         {
             return Results.Conflict(exception.Message);
         }
+        AuditTrail.RecordUserAction(
+            dbContext,
+            user,
+            "CareCaseResolved",
+            nameof(CareCase),
+            careCase.Id);
 
         await dbContext.SaveChangesAsync(cancellationToken);
 
