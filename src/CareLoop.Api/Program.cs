@@ -74,6 +74,7 @@ app.MapGet("/weatherforecast", () =>
 app.MapGroup("/auth").MapIdentityApi<ApplicationUser>();
 
 app.MapCareCaseEndpoints();
+app.MapFhirEndpoints();
 
 app.Run();
 
