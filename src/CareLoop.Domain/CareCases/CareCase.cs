@@ -6,13 +6,23 @@ using CareLoop.Domain.Patients;
 using CareLoop.Domain.Reviews;
 
 namespace CareLoop.Domain.CareCases;
-
+using CareLoop.Domain.Events;
 public class CareCase
 {
     private readonly List<ContactAttempt> _contactAttempts = new();
     private readonly List<FollowUpAction> _followUpActions = new();
     private readonly List<Escalation> _escalations = new();
     private readonly List<CareCaseEvent> _events = new();
+
+    private readonly List<IDomainEvent> _domainEvents = [];
+
+    public IReadOnlyCollection<IDomainEvent> DomainEvents =>
+        _domainEvents.AsReadOnly();
+
+    public void ClearDomainEvents()
+    {
+        _domainEvents.Clear();
+    }
 
     public Guid Id { get; private set; }
 
@@ -79,6 +89,13 @@ public class CareCase
             CareCaseEventType.ResultReceived,
             result.ReceivedAt,
             "Diagnostic result received.");
+
+        _domainEvents.Add(
+            new DiagnosticResultReceivedDomainEvent(
+                Id,
+                result.Id,
+                result.Priority,
+                result.ReceivedAt));
     }
 
     public void ReviewResult(ClinicalReview review)
@@ -236,6 +253,11 @@ public class CareCase
             CareCaseEventType.Resolved,
             resolvedAt,
             "Care case resolved.");
+
+        _domainEvents.Add(
+            new CareCaseResolvedDomainEvent(
+                Id,
+                resolvedAt));
     }
 
     public void Escalate(Escalation escalation)

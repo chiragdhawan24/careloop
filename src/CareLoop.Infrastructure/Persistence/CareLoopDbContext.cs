@@ -12,6 +12,9 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 // using Microsoft.Extensions.Options; -- no longer needed
 
+using CareLoop.Infrastructure.Outbox;
+using System.Text.Json;
+
 using CareLoop.Infrastructure.Auditing;
 
 namespace CareLoop.Infrastructure.Persistence;
@@ -48,6 +51,9 @@ public sealed class CareLoopDbContext(
     public DbSet<AuditRecord> AuditRecords =>
         Set<AuditRecord>();
 
+    public DbSet<OutboxMessage> OutboxMessages =>
+        Set<OutboxMessage>();
+        
     // REMOVED because CareLoop.Api gave error 134
     // protected override void OnConfiguring(
     //     DbContextOptionsBuilder optionsBuilder)
@@ -102,11 +108,46 @@ public sealed class CareLoopDbContext(
             typeof(CareLoopDbContext).Assembly);
     }
 
-    public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+    public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
         EnsureAuditRecordsAreAppendOnly();
 
-        return base.SaveChangesAsync(cancellationToken);
+        var aggregates = ChangeTracker
+            .Entries<CareCase>()
+            .Select(x => x.Entity)
+            .Where(x => x.DomainEvents.Count > 0)
+            .Distinct()
+            .ToList();
+
+        var domainEvents = aggregates
+            .SelectMany(x => x.DomainEvents)
+            .ToList();
+
+        foreach (var domainEvent in domainEvents)
+        {
+            var eventType = domainEvent.GetType();
+
+            var outboxMessage = new OutboxMessage(
+                Guid.NewGuid(),
+                eventType.FullName ?? eventType.Name,
+                JsonSerializer.Serialize(
+                    domainEvent,
+                    eventType),
+                domainEvent.OccurredAt);
+
+            OutboxMessages.Add(outboxMessage);
+        }
+
+        var result =
+            await base.SaveChangesAsync(
+                cancellationToken);
+
+        foreach (var aggregate in aggregates)
+        {
+            aggregate.ClearDomainEvents();
+        }
+
+        return result;
     }
 
     private void EnsureAuditRecordsAreAppendOnly()

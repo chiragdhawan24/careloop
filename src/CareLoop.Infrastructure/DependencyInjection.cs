@@ -7,6 +7,8 @@ using CareLoop.Infrastructure.Identity;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection;
 
+using CareLoop.Infrastructure.Outbox;
+
 using CareLoop.Infrastructure.Sla;
 
 namespace CareLoop.Infrastructure;
@@ -23,6 +25,8 @@ public static class DependencyInjection
         builder.Services.AddHostedService<ReviewSlaEscalationWorker>();
         // builder.AddNpgsqlDbContext<CareLoopDbContext>(
         //     "careloopdb");
+
+        builder.Services.AddHostedService<OutboxProcessor>();
         
         builder.AddNpgsqlDbContext<CareLoopDbContext>(
             "careloopdb",

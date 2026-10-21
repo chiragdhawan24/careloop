@@ -76,5 +76,7 @@ internal sealed class CareCaseConfiguration
 
         builder.Navigation(x => x.Events)
             .HasField("_events");
+
+        builder.Ignore(x => x.DomainEvents);
     }
 }
