@@ -86,9 +86,15 @@ public static class CareCaseEndpoints
                 new CareCaseSummaryResponse(
                     careCase.Id,
                     careCase.Patient.MedicalRecordNumber,
+                    careCase.Patient.FirstName + " " +
+                        careCase.Patient.LastName,
                     careCase.DiagnosticOrder.TestName,
+                    careCase.DiagnosticResult == null
+                        ? null
+                        : careCase.DiagnosticResult.Priority,
                     careCase.Status,
                     careCase.CreatedAt))
+            .OrderByDescending(x => x.CreatedAt)
             .ToListAsync(cancellationToken);
 
         return Results.Ok(careCases);

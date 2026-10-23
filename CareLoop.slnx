@@ -5,7 +5,6 @@
     <Project Path="src/CareLoop.Domain/CareLoop.Domain.csproj" />
     <Project Path="src/CareLoop.Infrastructure/CareLoop.Infrastructure.csproj" />
     <Project Path="src/CareLoop.ServiceDefaults/CareLoop.ServiceDefaults.csproj" />
-    <Project Path="src/CareLoop.Web/CareLoop.Web.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/CareLoop.Application.Tests/CareLoop.Application.Tests.csproj" />
